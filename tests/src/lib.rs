@@ -145,10 +145,27 @@ mod tests {
         let b = 2_f64.powi(-60);
         let pb = a.clone().map(|a| pbeta(0.5, a, b, true, true));
         let ldp = diff(log(diff(pb.collect())));
-        println!("{:?}", ldp);
         for l in ldp {
             let val = l - (1_f64 / 2_f64).ln();
             assert!(val.abs() < 1e-9)
         }
+
+        // Based on a test in `d-p-q-r-tst-2.R` at line 455 from the R source code.
+        // qbeta(*, a,b) when  a,b << 1 : can easily fail
+        {
+            let q1 = 9.094955e-13;
+            assert_abs_diff_eq!(
+                pbeta(q1, 0.125, 2f64.powi(-26), true, false),
+                2f64.powi(-28),
+                epsilon = epsilon
+            )
+        }
+
+        // Based on a test in `d-p-q-r-tst-2.R` at line 850 from the R source code.
+        assert_eq!(pbeta(0.0, 0.0, 3.0, true, false), 1.0);
+        assert_eq!(pbeta(1.0, 0.1, 0.0, true, false), 1.0);
+        assert_eq!(pbeta(1.1, 3.0, 0.0, true, false), 1.0);
+        assert_eq!(pbeta(0.0, 0.0, 0.0, true, false), 0.5);
+        assert_eq!(pbeta(1.0, 0.0, 0.0, true, false), 1.0);
     }
 }

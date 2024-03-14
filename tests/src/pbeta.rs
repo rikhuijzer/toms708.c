@@ -59,6 +59,9 @@ pub fn r_dt_1(lower_tail: bool, log_p: bool) -> f64 {
 }
 
 fn pbeta_raw(x: f64, a: f64, b: f64, lower_tail: bool, log_p: bool) -> f64 {
+    if x >= 1.0 {
+        return r_dt_1(lower_tail, log_p);
+    }
     if a == 0.0 || b == 0.0 || !a.is_finite() || !b.is_finite() {
         if a == 0.0 && b == 0.0 {
             return if log_p { -M_LN2 } else { 0.5 };
@@ -75,8 +78,8 @@ fn pbeta_raw(x: f64, a: f64, b: f64, lower_tail: bool, log_p: bool) -> f64 {
             return r_dt_1(lower_tail, log_p);
         }
     }
-    if x >= 1.0 {
-        return r_dt_1(lower_tail, log_p);
+    if x <= 0.0 {
+        return r_dt_0(lower_tail, log_p);
     }
 
     let x1 = 0.5 - x + 0.5;
@@ -103,9 +106,6 @@ pub fn pbeta(x: f64, a: f64, b: f64, lower_tail: bool, log_p: bool) -> f64 {
     }
     if a < 0.0 || b < 0.0 {
         return f64::NAN;
-    }
-    if x <= 0.0 {
-        return r_dt_0(lower_tail, log_p);
     }
     pbeta_raw(x, a, b, lower_tail, log_p)
 }
