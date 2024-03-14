@@ -8,3 +8,4 @@ cc = "1.0"
 
 [dev-dependencies]
 approx = "0.5"
+statrs = "0.16"

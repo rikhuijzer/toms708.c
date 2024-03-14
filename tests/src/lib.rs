@@ -17,6 +17,7 @@ mod tests {
     use super::*;
 
     use approx::assert_abs_diff_eq;
+    use statrs::statistics::Statistics;
 
     fn bratio(a: f64, b: f64, x: f64, y: f64, log_p: bool) -> (f64, f64, i32) {
         let mut w = 0.0;
@@ -72,6 +73,15 @@ mod tests {
             )
         }
 
+        // One case from the loop above.
+        assert_abs_diff_eq!(
+            pbeta(0.10, 0.8, 2.0, false, true),
+            // R> sprintf("%.13f", pbeta(0.10, 0.8, 2.0, lower.tail=FALSE, log.p=TRUE))
+            -0.3182809860569,
+            epsilon = epsilon
+        );
+
+        // Based on a test in `d-p-q-r-tst-2.R` from the R source code.
         assert_abs_diff_eq!(
             pbeta(256.0/1024.0, 3.0, 2200.0, false, true),
             // R> sprintf("%.13f", pbeta(256/1024, 3, 2200, lower.tail=FALSE, log.p=TRUE))
@@ -94,5 +104,27 @@ mod tests {
         );
 
         assert!(pbeta(1024.0/1024.0, 3.0, 2200.0, false, true).is_infinite());
+
+        fn diff(x: Vec<f64>) -> Vec<f64> {
+            let mut result = Vec::new();
+            let n = x.len();
+            for i in 0..n - 1 {
+                result.push(x[i + 1] - x[i]);
+            }
+            result
+        }
+
+        // Based on a test in `d-p-q-r-tst-2.R` at line 330 from the R source code.
+        // pbeta(x, a, b, log=TRUE) for small x and a is ~ log-linear.
+        let x= (10..=200).map(|n| 2.0_f64.powf(-n as f64));
+        for a in vec![1e-8, 1e-12, 16e-16, 4e-16] {
+            for b in vec![0.6, 1.0, 2.0, 10.0] {
+                let xs = x.clone().map(|x| pbeta(x, a, b, true, true));
+                let dp = diff(xs.collect());
+                let sd = dp.clone().population_std_dev();
+                let m = dp.mean();
+                assert!(sd / m < 0.0007);
+            }
+        }
     }
 }
