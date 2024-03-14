@@ -16,7 +16,4 @@ jobs:
       - run: |
           rustup update stable
           rustup default stable
-      - uses: Swatinem/rust-cache@v2
-        with:
-          prefix-key: 'test'
       - run: cargo test --manifest-path='tests/Cargo.toml'
