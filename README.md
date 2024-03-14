@@ -8,8 +8,8 @@ It was later updated by John Burkardt and converted to a C file for the R projec
 
 This repository contains an updated version of R's C file which aim to be more readable:
 
-- The code has been reformatted via `clang-format`.
-- Most unstructured control flow, such as GOTOs and macros, have been replaced with structured control flow (functions) or just replaced by the code they would have executed.
+- Replace most unstructured control flow, such as GOTOs and macros, with structured control flow (functions) or just replace them by the code they would have executed.
+- Reformatting the code via `clang-format`.
 
 Unlike many other files in the R `nmath` directory, the `toms708.c` file does not mention the GNU General Public License in its header.
 Therefore I changed the license for this C file to one of the most permissive licenses: MIT.
