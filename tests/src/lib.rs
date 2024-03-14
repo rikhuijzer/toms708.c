@@ -46,18 +46,30 @@ mod tests {
 
     // Thanks to the `pbeta` definition in `pbeta.rs`, we can compare the
     // outcome of `bratio` against the outcome of `pbeta` in R.
+    // Expected values are from R version 4.3.2.
     //
     // `pbeta.rs` is mostly handling edge cases and then calling `bratio`.
     // Cases which end up in `bratio` are where 0 < a < Inf and 0 < b < Inf.
     #[test]
     fn test_pbeta() {
-        let x = 0.5;
-        let a = 1.0;
-        let b = 1.0;
         let lower_tail = true;
         let log_p = false;
+        let received = pbeta(0.5, 1.0, 1.0, lower_tail, log_p);
+        // R> pbeta(0.5, 1.0, 1.0, lower.tail = TRUE, log.p = FALSE)
         let expected = 0.5;
-        let received = pbeta(x, a, b, lower_tail, log_p);
-        assert!((expected - received).abs() < 1e-15);
+        assert_eq!(received, expected);
+
+        assert_eq!(
+            pbeta(256.0/1024.0, 3.0, 2200.0, false, true),
+            // R> sprintf("%.13f", pbeta(256/1024, 3, 2200, lower.tail=FALSE, log.p=TRUE))
+            -620.9697808693397
+        );
+
+        assert_eq!(
+            pbeta(512.0/1024.0, 3.0, 2200.0, false, true),
+            // R> sprintf("%.13f", pbeta(512/1024, 3, 2200, lower.tail=FALSE, log.p=TRUE))
+            // Manually removed one digit from the end.
+            -1511.608541697189
+        );
     }
 }
