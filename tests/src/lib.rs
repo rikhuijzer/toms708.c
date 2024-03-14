@@ -90,8 +90,7 @@ mod tests {
         );
 
         // Based on a test in `d-p-q-r-tst-2.R` from the R source code.
-        assert_abs_diff_eq!(
-            pbeta(256.0 / 1024.0, 3.0, 2200.0, false, true),
+        assert_abs_diff_eq!(pbeta(256.0 / 1024.0, 3.0, 2200.0, false, true),
             // R> sprintf("%.13f", pbeta(256/1024, 3, 2200, lower.tail=FALSE, log.p=TRUE))
             -620.9697808693397,
             epsilon = epsilon

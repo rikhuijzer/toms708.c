@@ -18,7 +18,7 @@ jobs:
           rustup default stable
       - run: cargo test --manifest-path='tests/Cargo.toml'
 
-  format:
+  clang-format:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -26,3 +26,20 @@ jobs:
       - uses: jidicula/clang-format-action@v4.11.0
         with:
           clang-format-version: '17'
+
+  rust-format:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          rustup update stable
+          rustup default stable
+          rustup component add clippy
+          rustup component add rustfmt
+      - run: |
+          cd tests/
+          cargo clippy -- -D warnings
+      - run: |
+          cd tests/
+          cargo fmt -- --check
