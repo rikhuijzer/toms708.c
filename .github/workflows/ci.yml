@@ -23,6 +23,6 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
-      - uses: judicula/clang-format-action@v4
+      - uses: jidicula/clang-format-action@v4
         with:
           clang-format-version: '17'
