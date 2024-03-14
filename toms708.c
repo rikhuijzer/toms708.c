@@ -176,6 +176,15 @@ double logspace_add(double logx, double logy) {
   return fmax2(logx, logy) + log1p(exp(-fabs(logx - logy)));
 }
 
+void l_end(double *w, double *w1, bool do_swap) {
+  if (do_swap) {
+    double t = *w;
+    *w = *w1;
+    *w1 = t;
+  }
+  return;
+}
+
 void bratio(double a, double b, double x, double y, double *w, double *w1,
             int *ierr, int log_p) {
   /* -----------------------------------------------------------------------
@@ -351,7 +360,7 @@ void bratio(double a, double b, double x, double y, double *w, double *w1,
       *w = fpser(a0, b0, x0, eps, log_p);
       *w1 = log_p ? R_Log1_Exp(*w) : 0.5 - *w + 0.5;
       R_ifDEBUG_printf("  b0 small -> w := fpser(*) = %.15g\n", *w);
-      goto L_end;
+      return l_end(w, w1, do_swap);
     }
 
     if (a0 < min(eps, eps * b0) && b0 * x0 <= 1.) { /* L90: */
@@ -473,7 +482,7 @@ void bratio(double a, double b, double x, double y, double *w, double *w1,
     *w1 = log_p ? R_Log1_Exp(*w) : 0.5 - *w + 0.5;
     R_ifDEBUG_printf(
         "  b0 >= a0 > 100; lambda <= a0 * 0.03: *w:= basym(*) =%.15g\n", *w);
-    goto L_end;
+    return l_end(w, w1, do_swap);
 
   } /* else: a, b > 1 */
 
@@ -483,19 +492,19 @@ L_w_bpser: // was L100
   *w = bpser(a0, b0, x0, eps, log_p);
   *w1 = log_p ? R_Log1_Exp(*w) : 0.5 - *w + 0.5;
   R_ifDEBUG_printf(" L_w_bpser: *w := bpser(*) = %.15g\n", *w);
-  goto L_end;
+  return l_end(w, w1, do_swap);
 
 L_w1_bpser: // was L110
   *w1 = bpser(b0, a0, y0, eps, log_p);
   *w = log_p ? R_Log1_Exp(*w1) : 0.5 - *w1 + 0.5;
   R_ifDEBUG_printf(" L_w1_bpser: *w1 := bpser(*) = %.15g\n", *w1);
-  goto L_end;
+  return l_end(w, w1, do_swap);
 
 L_bfrac:
   *w = bfrac(a0, b0, x0, y0, lambda, eps * 15., log_p);
   *w1 = log_p ? R_Log1_Exp(*w) : 0.5 - *w + 0.5;
   R_ifDEBUG_printf(" L_bfrac: *w := bfrac(*) = %g\n", *w);
-  goto L_end;
+  return l_end(w, w1, do_swap);
 
 L140:
   /* b0 := fractional_part( b0 )  in (0, 1]  */
@@ -551,7 +560,7 @@ L_end_from_w:
   } else {
     *w1 = 0.5 - *w + 0.5;
   }
-  goto L_end;
+  return l_end(w, w1, do_swap);
 
 L_end_from_w1:
   if (log_p) {
@@ -560,7 +569,7 @@ L_end_from_w1:
   } else {
     *w = 0.5 - *w1 + 0.5;
   }
-  goto L_end;
+  return l_end(w, w1, do_swap);
 
 L_end_from_w1_log:
   // *w1 = log(w1) already; w = 1 - w1  ==> log(w) = log(1 - w1) = log(1 -
@@ -571,15 +580,7 @@ L_end_from_w1_log:
     *w = /* 1 - exp(*w1) */ -expm1(*w1);
     *w1 = exp(*w1);
   }
-  goto L_end;
-
-L_end:
-  if (do_swap) { /* swap */
-    double t = *w;
-    *w = *w1;
-    *w1 = t;
-  }
-  return;
+  return l_end(w, w1, do_swap);
 
 } /* bratio */
 
