@@ -35,9 +35,6 @@
  * Make this a stand-alone file and replace unstructured programming
  * uses such as GOTOs and macros with structured programming constructs.
  *
- * Unlike many other files in the R `nmath` directory, this file does
- * not mention the GNU General Public License in its header. Therefore
- * I changed the license to one of the most permissive licenses: MIT.
  */
 
 #undef min
