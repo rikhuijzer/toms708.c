@@ -122,6 +122,10 @@ mod tests {
             result
         }
 
+        fn log(x: Vec<f64>) -> Vec<f64> {
+            x.iter().map(|x| x.ln()).collect()
+        }
+
         // Based on a test in `d-p-q-r-tst-2.R` at line 330 from the R source code.
         // pbeta(x, a, b, log=TRUE) for small x and a is ~ log-linear.
         let x = (10..=200).map(|n| 2.0_f64.powf(-n as f64));
@@ -133,6 +137,18 @@ mod tests {
                 let m = dp.mean();
                 assert!(sd / m < 0.0007);
             }
+        }
+
+        // Based on a test in `d-p-q-r-tst-2.R` at line 401 from the R source code.
+        // pbeta(x, <small a>,<small b>, .., log):
+        let a = (1..=25).map(|i| 2_f64.powi(-(90 + i)));
+        let b = 2_f64.powi(-60);
+        let pb = a.clone().map(|a| pbeta(0.5, a, b, true, true));
+        let ldp = diff(log(diff(pb.collect())));
+        println!("{:?}", ldp);
+        for l in ldp {
+            let val = l - (1_f64 / 2_f64).ln();
+            assert!(val.abs() < 1e-9)
         }
     }
 }
