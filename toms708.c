@@ -1287,14 +1287,14 @@ static void bgrat(double a, double b, double x, double y, double *w, double eps,
       /* r1 = b * (gam1(b) + 1.) * exp(b * log(z)),// = b/gamma(b+1) z^b = z^b /
        * gamma(b) set r := exp(-z) * z^b / gamma(b) ; gam1(b) = 1/gamma(b+1) - 1
        * , b in [-1/2, 3/2] */
-          // exp(a*lnx) underflows for large (a * lnx); e.g. large a ==> using
-          // log_r := log(r): r = r1 * exp(a * lnx) * exp(bm1 * 0.5 * lnx);
-          // log(r)=log(b) + log1p(gam1(b)) + b * log(z) + (a * lnx) + (bm1 *
-          // 0.5 * lnx),
-              log_r = log(b) + log1p(gam1(b)) + b * log(z) + nu * lnx,
-              // FIXME work with  log_u = log(u)  also when log_p=false  (??)
-              // u is 'factored out' from the expansion {and multiplied back, at
-              // the end}:
+      // exp(a*lnx) underflows for large (a * lnx); e.g. large a ==> using
+      // log_r := log(r): r = r1 * exp(a * lnx) * exp(bm1 * 0.5 * lnx);
+      // log(r)=log(b) + log1p(gam1(b)) + b * log(z) + (a * lnx) + (bm1 *
+      // 0.5 * lnx),
+      log_r = log(b) + log1p(gam1(b)) + b * log(z) + nu * lnx,
+      // FIXME work with  log_u = log(u)  also when log_p=false  (??)
+      // u is 'factored out' from the expansion {and multiplied back, at
+      // the end}:
       log_u = log_r - (algdiv(b, a) +
                        b * log(nu)), // algdiv(b,a) = log(gamma(a)/gamma(a+b))
       /* u = (log_p) ? log_r - u : exp(log_r-u); // =: M  in (9.2) of {reference
