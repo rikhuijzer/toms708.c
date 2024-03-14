@@ -73,7 +73,7 @@ mod tests {
         let epsilon = 1e-12;
 
         // Based on a test in `d-p-q-r-tst-2.R` from the R source code.
-        for x in vec![0.01, 0.10, 0.25, 0.40, 0.55, 0.71, 0.98] {
+        for x in [0.01, 0.10, 0.25, 0.40, 0.55, 0.71, 0.98] {
             assert_abs_diff_eq!(
                 pbeta(x, 0.8, 2.0, false, true),
                 pbeta(1.0 - x, 2.0, 0.8, true, true),
@@ -125,8 +125,8 @@ mod tests {
         // Based on a test in `d-p-q-r-tst-2.R` at line 330 from the R source code.
         // pbeta(x, a, b, log=TRUE) for small x and a is ~ log-linear.
         let x = (10..=200).map(|n| 2.0_f64.powf(-n as f64));
-        for a in vec![1e-8, 1e-12, 16e-16, 4e-16] {
-            for b in vec![0.6, 1.0, 2.0, 10.0] {
+        for a in [1e-8, 1e-12, 16e-16, 4e-16] {
+            for b in [0.6, 1.0, 2.0, 10.0] {
                 let xs = x.clone().map(|x| pbeta(x, a, b, true, true));
                 let dp = diff(xs.collect());
                 let sd = dp.clone().population_std_dev();
