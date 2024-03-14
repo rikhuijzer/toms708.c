@@ -72,6 +72,20 @@ mod tests {
 
         let epsilon = 1e-12;
 
+        assert_abs_diff_eq!(
+            pbeta(0.01, 0.01, 0.01, true, false),
+            // R> pbeta(0.01, 0.01, 0.01, lower.tail = TRUE, log.p = FALSE)
+            0.4776207614162,
+            epsilon = epsilon
+        );
+
+        assert_abs_diff_eq!(
+            pbeta(0.001, 0.001, 0.01, true, false),
+            // R> pbeta(0.001, 0.001, 0.01, lower.tail = TRUE, log.p = FALSE)
+            0.9028483975306,
+            epsilon = epsilon
+        );
+
         // Based on a test in `d-p-q-r-tst-2.R` from the R source code.
         for x in [0.01, 0.10, 0.25, 0.40, 0.55, 0.71, 0.98] {
             assert_abs_diff_eq!(
