@@ -63,6 +63,15 @@ mod tests {
 
         let epsilon = 1e-12;
 
+        // Based on a test in `d-p-q-r-tst-2.R` from the R source code.
+        for x in vec![0.01, 0.10, 0.25, 0.40, 0.55, 0.71, 0.98] {
+            assert_abs_diff_eq!(
+                pbeta(x, 0.8, 2.0, false, true),
+                pbeta(1.0 - x, 2.0, 0.8, true, true),
+                epsilon = epsilon
+            )
+        }
+
         assert_abs_diff_eq!(
             pbeta(256.0/1024.0, 3.0, 2200.0, false, true),
             // R> sprintf("%.13f", pbeta(256/1024, 3, 2200, lower.tail=FALSE, log.p=TRUE))
@@ -76,5 +85,14 @@ mod tests {
             -1511.6085416971891,
             epsilon = epsilon
         );
+
+        assert_abs_diff_eq!(
+            pbeta(768.0/1024.0, 3.0, 2200.0, false, true),
+            // R> sprintf("%.13f", pbeta(768/1024, 3, 2200, lower.tail=FALSE, log.p=TRUE))
+            -3035.7220144978146,
+            epsilon = epsilon
+        );
+
+        assert!(pbeta(1024.0/1024.0, 3.0, 2200.0, false, true).is_infinite());
     }
 }
