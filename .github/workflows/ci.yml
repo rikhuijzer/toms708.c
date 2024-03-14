@@ -17,3 +17,11 @@ jobs:
           rustup update stable
           rustup default stable
       - run: cargo test --manifest-path='tests/Cargo.toml'
+
+  format:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - run: clang-format --dry-run --Werror toms708.c
+
