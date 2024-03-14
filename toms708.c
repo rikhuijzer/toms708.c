@@ -267,7 +267,7 @@ void bratio(double a, double b, double x, double y, double *w, double *w1,
   R_ifDEBUG_printf("bratio(a=%g, b=%g, x=%9g, y=%9g, .., log_p=%d): ", a, b, x,
                    y, log_p);
   *ierr = 0;
-  if (x == 0.) {
+  if (x == 0.0) {
     if (a == 0.0) {
       *ierr = 6;
       return;
@@ -278,11 +278,22 @@ void bratio(double a, double b, double x, double y, double *w, double *w1,
     }
   }
 
-  if (y == 0.)
-    goto L210;
+  if (y == 0.0) {
+    if (b == 0.0) {
+      *ierr = 7;
+      return;
+    } else {
+      *w = r_d__1(log_p);
+      *w1 = r_d__0(log_p);
+      return;
+    }
+  }
 
-  if (a == 0.)
-    goto L211;
+  if (a == 0.) {
+    *w = r_d__1(log_p);
+    *w1 = r_d__0(log_p);
+    return;
+  }
   if (b == 0.) {
     *w = r_d__0(log_p);
     *w1 = r_d__1(log_p);
@@ -532,17 +543,6 @@ L140:
   goto L_end_from_w;
 
   /* TERMINATION OF THE PROCEDURE */
-
-L210:
-  if (b == 0.) {
-    *ierr = 7;
-    return;
-  }
-  // else:
-L211:
-  *w = r_d__1(log_p);
-  *w1 = r_d__0(log_p);
-  return;
 
 L_end_from_w:
   if (log_p) {

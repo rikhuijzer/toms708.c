@@ -6,15 +6,13 @@ The file `toms708.c` contains a stand-alone C implementation of the TOMS708 algo
 `toms708` was originally a Fortran77 program by Armido Didonato and Alfred Morris, Jr.
 It was later updated by John Burkardt and converted to a C file for the R project.
 
-This repository contains an updated version of R's C file which has been cleaned up:
+This repository contains an updated version of R's C file which aim to be more readable:
 
-- The code has been reformatted to be more readable.
-- Most unstructured control flow, such as GOTOs and macros, have been replaced with structured control flow (functions).
-
-The main aim of this project is to make the code more readable by making the control flow and scope of variables more clear.
+- The code has been reformatted via `clang-format`.
+- Most unstructured control flow, such as GOTOs and macros, have been replaced with structured control flow (functions) or just replaced by the code they would have executed.
 
 Unlike many other files in the R `nmath` directory, the `toms708.c` file does not mention the GNU General Public License in its header.
-Therefore I changed the license to one of the most permissive licenses: MIT.
+Therefore I changed the license for this C file to one of the most permissive licenses: MIT.
 
 ## Testing
 
