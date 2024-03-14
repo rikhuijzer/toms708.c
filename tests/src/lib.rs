@@ -16,6 +16,8 @@ mod toms708 {
 mod tests {
     use super::*;
 
+    use approx::assert_abs_diff_eq;
+
     fn bratio(a: f64, b: f64, x: f64, y: f64, log_p: bool) -> (f64, f64, i32) {
         let mut w = 0.0;
         let mut w1 = 0.0;
@@ -59,17 +61,18 @@ mod tests {
         let expected = 0.5;
         assert_eq!(received, expected);
 
-        assert_eq!(
+        assert_abs_diff_eq!(
             pbeta(256.0/1024.0, 3.0, 2200.0, false, true),
             // R> sprintf("%.13f", pbeta(256/1024, 3, 2200, lower.tail=FALSE, log.p=TRUE))
-            -620.9697808693397
+            -620.9697808693397,
+            epsilon = 1e-13
         );
 
-        assert_eq!(
+        assert_abs_diff_eq!(
             pbeta(512.0/1024.0, 3.0, 2200.0, false, true),
-            // R> sprintf("%.13f", pbeta(512/1024, 3, 2200, lower.tail=FALSE, log.p=TRUE))
-            // Manually removed one digit from the end.
-            -1511.608541697189
+            // R> sprintf("%.10f", pbeta(512/1024, 3, 2200, lower.tail=FALSE, log.p=TRUE))
+            -1511.6085416972,
+            epsilon = 1e-10
         );
     }
 }
