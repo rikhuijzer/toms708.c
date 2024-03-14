@@ -23,6 +23,6 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
-      - run: clang-format --version
-      - run: clang-format --dry-run --Werror toms708.c
-
+      - uses: judicula/clang-format-action@v4
+        with:
+          clang-format-version: '17'
