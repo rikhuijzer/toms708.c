@@ -17,9 +17,9 @@ mod tests {
         (w, w1, ierr)
     }
 
+    // The tests with a "subroutine" prefix are based on `toms708_test.f`.
     #[test]
-    // This is `subroutine test02` from `toms708_test.f`.
-    fn test_bratio() {
+    fn subroutine_test02() {
         let a: f64 = 5.3;
         let b: f64 = 10.1;
 

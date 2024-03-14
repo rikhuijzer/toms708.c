@@ -1,7 +1,8 @@
-# toms708
+# toms708.c
 
-Computes the Incomplete Beta Function ratio Ix(a,b).
+Compute the Incomplete Beta Function ratio Ix(a,b).
 
+The file `toms708.c` contains a stand-alone C implementation of the TOMS708 algorithm.
 `toms708` was originally a Fortran77 program by Armido Didonato and Alfred Morris, Jr.
 It was later updated by John Burkardt and converted to a C file for the R project.
 
