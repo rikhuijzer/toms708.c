@@ -1,0 +1,22 @@
+name: ci
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          rustup update stable
+          rustup default stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          prefix-key: 'test'
+      - run: cargo test --manifest-path='tests/Cargo.toml'
