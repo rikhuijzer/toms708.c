@@ -36,9 +36,9 @@
  *      as from R 2.6.0, 'log_p' partially improved over log(p..)
  */
 
+use crate::toms708::bratio;
 use crate::toms708::r_d__0;
 use crate::toms708::r_d__1;
-use crate::toms708::bratio;
 
 const M_LN2: f64 = std::f64::consts::LN_2;
 
@@ -83,7 +83,9 @@ fn pbeta_raw(x: f64, a: f64, b: f64, lower_tail: bool, log_p: bool) -> f64 {
     let mut w = 0.0;
     let mut wc = 0.0;
     let mut ierr = 0;
-    unsafe { bratio(a, b, x, x1, &mut w, &mut wc, &mut ierr, log_p); }
+    unsafe {
+        bratio(a, b, x, x1, &mut w, &mut wc, &mut ierr, log_p);
+    }
 
     if ierr != 0 && ierr != 11 && ierr != 14 {
         println!("pbeta_raw({x}, a={a}, b={b}, lower_tail={lower_tail}, log_p={log_p}) -> bratio() gave error code{ierr}");

@@ -7,8 +7,16 @@ mod toms708 {
     extern "C" {
         pub fn r_d__0(log_p: bool) -> f64;
         pub fn r_d__1(log_p: bool) -> f64;
-        pub fn bratio(a: f64, b: f64, x: f64, y: f64, w: *mut f64,
-            w1: *mut f64, ierr: *mut i32, log_p: bool) -> i32;
+        pub fn bratio(
+            a: f64,
+            b: f64,
+            x: f64,
+            y: f64,
+            w: *mut f64,
+            w1: *mut f64,
+            ierr: *mut i32,
+            log_p: bool,
+        ) -> i32;
     }
 }
 
@@ -83,27 +91,27 @@ mod tests {
 
         // Based on a test in `d-p-q-r-tst-2.R` from the R source code.
         assert_abs_diff_eq!(
-            pbeta(256.0/1024.0, 3.0, 2200.0, false, true),
+            pbeta(256.0 / 1024.0, 3.0, 2200.0, false, true),
             // R> sprintf("%.13f", pbeta(256/1024, 3, 2200, lower.tail=FALSE, log.p=TRUE))
             -620.9697808693397,
             epsilon = epsilon
         );
 
         assert_abs_diff_eq!(
-            pbeta(512.0/1024.0, 3.0, 2200.0, false, true),
+            pbeta(512.0 / 1024.0, 3.0, 2200.0, false, true),
             // R> sprintf("%.13f", pbeta(512/1024, 3, 2200, lower.tail=FALSE, log.p=TRUE))
             -1511.6085416971891,
             epsilon = epsilon
         );
 
         assert_abs_diff_eq!(
-            pbeta(768.0/1024.0, 3.0, 2200.0, false, true),
+            pbeta(768.0 / 1024.0, 3.0, 2200.0, false, true),
             // R> sprintf("%.13f", pbeta(768/1024, 3, 2200, lower.tail=FALSE, log.p=TRUE))
             -3035.7220144978146,
             epsilon = epsilon
         );
 
-        assert!(pbeta(1024.0/1024.0, 3.0, 2200.0, false, true).is_infinite());
+        assert!(pbeta(1024.0 / 1024.0, 3.0, 2200.0, false, true).is_infinite());
 
         fn diff(x: Vec<f64>) -> Vec<f64> {
             let mut result = Vec::new();
@@ -116,7 +124,7 @@ mod tests {
 
         // Based on a test in `d-p-q-r-tst-2.R` at line 330 from the R source code.
         // pbeta(x, a, b, log=TRUE) for small x and a is ~ log-linear.
-        let x= (10..=200).map(|n| 2.0_f64.powf(-n as f64));
+        let x = (10..=200).map(|n| 2.0_f64.powf(-n as f64));
         for a in vec![1e-8, 1e-12, 16e-16, 4e-16] {
             for b in vec![0.6, 1.0, 2.0, 10.0] {
                 let xs = x.clone().map(|x| pbeta(x, a, b, true, true));
