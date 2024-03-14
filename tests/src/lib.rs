@@ -61,18 +61,20 @@ mod tests {
         let expected = 0.5;
         assert_eq!(received, expected);
 
+        let epsilon = 1e-12;
+
         assert_abs_diff_eq!(
             pbeta(256.0/1024.0, 3.0, 2200.0, false, true),
             // R> sprintf("%.13f", pbeta(256/1024, 3, 2200, lower.tail=FALSE, log.p=TRUE))
             -620.9697808693397,
-            epsilon = 1e-13
+            epsilon = epsilon
         );
 
         assert_abs_diff_eq!(
             pbeta(512.0/1024.0, 3.0, 2200.0, false, true),
-            // R> sprintf("%.10f", pbeta(512/1024, 3, 2200, lower.tail=FALSE, log.p=TRUE))
-            -1511.6085416972,
-            epsilon = 1e-10
+            // R> sprintf("%.13f", pbeta(512/1024, 3, 2200, lower.tail=FALSE, log.p=TRUE))
+            -1511.6085416971891,
+            epsilon = epsilon
         );
     }
 }
