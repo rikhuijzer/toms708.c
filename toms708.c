@@ -421,6 +421,48 @@ void l140(double a0, double b0, double x0, double y0, double eps, double *w,
   return l_end_from_w(w, w1, do_swap, log_p);
 }
 
+void l131_if(double a, double b, double x, double a0, double b0, double x0,
+             double y0, double *w, double *w1, double n, double eps, int *ierr,
+             int ierr1, bool did_bup, bool do_swap, bool log_p) {
+  R_ifDEBUG_printf(" L131: bgrat(*, w1=%.15g) ", *w1);
+  bgrat(b0, a0, y0, x0, w1, 15 * eps, &ierr1, false);
+#ifdef DEBUG_bratio
+  REprintf(" ==> new w1=%.15g", *w1);
+  if (ierr1)
+    REprintf(" ERROR(code=%d)\n", ierr1);
+  else
+    REprintf("\n");
+#endif
+  if (*w1 == 0 || (0 < *w1 && *w1 < DBL_MIN)) { // w1=0 or very close:
+    // "almost surely" from underflow, try more: [2013-03-04]
+    // FIXME: it is even better to do this in bgrat *directly* at least for
+    // the case
+    //  !did_bup, i.e., where *w1 = (0 or -Inf) on entry
+    R_ifDEBUG_printf(" denormalized or underflow (?) -> retrying: ");
+    if (did_bup) { // re-do that part on log scale:
+      *w1 = bup(b0 - n, a0, y0, x0, n, eps, true);
+    } else
+      *w1 = ML_NEGINF; // = 0 on log-scale
+    bgrat(b0, a0, y0, x0, w1, 15 * eps, &ierr1, true);
+    if (ierr1)
+      *ierr = 10 + ierr1;
+#ifdef DEBUG_bratio
+    REprintf(" ==> new log(w1)=%.15g", *w1);
+    if (ierr1)
+      REprintf(" Error(code=%d)\n", ierr1);
+    else
+      REprintf("\n");
+#endif
+    return l_end_from_w1_log(w, w1, do_swap, log_p);
+  }
+  // else
+  if (ierr1)
+    *ierr = 10 + ierr1;
+  if (*w1 < 0)
+    printf("bratio(a=%g, b=%g, x=%g): bgrat() -> w1 = %g", a, b, x, *w1);
+  return l_end_from_w1(w, w1, do_swap, log_p);
+}
+
 void l131_else(double a, double b, double x, double y, double eps, double *w,
                double *w1, int *ierr, int ierr1, bool log_p) {
   /* L30: -------------------- both  a, b > 1  {a0 > 1  &  b0 > 1}
@@ -520,7 +562,10 @@ void bratio(double a, double b, double x, double y, double *w, double *w1,
   * ----------------------------------------------------------------------- */
 
   bool do_swap;
-  int n, ierr1 = 0;
+  // n used to be not initialized here, but that meant it was used uninitialized
+  // when going through GOTO L131.
+  int n = 0;
+  int ierr1 = 0;
   double z, a0, b0, x0, y0;
 
   /*  eps is a machine dependent constant: the smallest
@@ -687,43 +732,8 @@ void bratio(double a, double b, double x, double y, double *w, double *w1,
     R_ifDEBUG_printf("  ... n=20 and *w1 := bup(*) = %.15g; ", *w1);
     b0 += n;
   L131:
-    R_ifDEBUG_printf(" L131: bgrat(*, w1=%.15g) ", *w1);
-    bgrat(b0, a0, y0, x0, w1, 15 * eps, &ierr1, false);
-#ifdef DEBUG_bratio
-    REprintf(" ==> new w1=%.15g", *w1);
-    if (ierr1)
-      REprintf(" ERROR(code=%d)\n", ierr1);
-    else
-      REprintf("\n");
-#endif
-    if (*w1 == 0 || (0 < *w1 && *w1 < DBL_MIN)) { // w1=0 or very close:
-      // "almost surely" from underflow, try more: [2013-03-04]
-      // FIXME: it is even better to do this in bgrat *directly* at least for
-      // the case
-      //  !did_bup, i.e., where *w1 = (0 or -Inf) on entry
-      R_ifDEBUG_printf(" denormalized or underflow (?) -> retrying: ");
-      if (did_bup) { // re-do that part on log scale:
-        *w1 = bup(b0 - n, a0, y0, x0, n, eps, true);
-      } else
-        *w1 = ML_NEGINF; // = 0 on log-scale
-      bgrat(b0, a0, y0, x0, w1, 15 * eps, &ierr1, true);
-      if (ierr1)
-        *ierr = 10 + ierr1;
-#ifdef DEBUG_bratio
-      REprintf(" ==> new log(w1)=%.15g", *w1);
-      if (ierr1)
-        REprintf(" Error(code=%d)\n", ierr1);
-      else
-        REprintf("\n");
-#endif
-      return l_end_from_w1_log(w, w1, do_swap, log_p);
-    }
-    // else
-    if (ierr1)
-      *ierr = 10 + ierr1;
-    if (*w1 < 0)
-      printf("bratio(a=%g, b=%g, x=%g): bgrat() -> w1 = %g", a, b, x, *w1);
-    return l_end_from_w1(w, w1, do_swap, log_p);
+    return l131_if(a, b, x, a0, b0, x0, y0, w, w1, n, eps, ierr, ierr1, did_bup,
+                   do_swap, log_p);
   } else { /* L30: -------------------- both  a, b > 1  {a0 > 1  &  b0 > 1}
               ---*/
     return l131_else(a, b, x, y, eps, w, w1, ierr, ierr1, log_p);
