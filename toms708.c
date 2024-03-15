@@ -421,6 +421,61 @@ void l140(double a0, double b0, double x0, double y0, double eps, double *w,
   return l_end_from_w(w, w1, do_swap, log_p);
 }
 
+void l131_else(double a, double b, double x, double y, double eps, double *w,
+               double *w1, int *ierr, int ierr1, bool log_p) {
+  /* L30: -------------------- both  a, b > 1  {a0 > 1  &  b0 > 1}
+              ---*/
+
+  /* lambda := a y - b x  =  (a + b)y  =  a - (a+b)x    {using x + y == 1},
+     * ------ using the numerically best version : */
+  int lambda = isfinite(a + b) ? ((a > b) ? (a + b) * y - b : a - (a + b) * x)
+                               : a * y - b * x;
+  bool do_swap = (lambda < 0.);
+  double a0, b0, x0, y0;
+  if (do_swap) {
+    lambda = -lambda;
+    a0 = b;
+    x0 = y;
+    b0 = a;
+    y0 = x;
+  } else {
+    a0 = a;
+    x0 = x;
+    b0 = b;
+    y0 = y;
+  }
+
+  R_ifDEBUG_printf("  L30:  both  a, b > 1; |lambda| = %#g, do_swap = %d\n",
+                   lambda, do_swap);
+
+  if (b0 < 40.) {
+    R_ifDEBUG_printf("  b0 < 40;");
+    if (b0 * x0 <= 0.7 ||
+        (log_p && lambda > 650.)) // << added 2010-03; svn r51327
+      return l_w_bpser(a0, b0, x0, w, w1, eps, do_swap, log_p);
+    else
+      return l140(a0, b0, x0, y0, eps, w, w1, do_swap, ierr, ierr1, log_p);
+  } else if (a0 > b0) { /* ----  a0 > b0 >= 40  ---- */
+    R_ifDEBUG_printf("  a0 > b0 >= 40;");
+    if (b0 <= 100. || lambda > b0 * 0.03)
+      return l_bfrac(a0, b0, x0, y0, lambda, eps, w, w1, do_swap, log_p);
+
+  } else if (a0 <= 100.) {
+    R_ifDEBUG_printf("  a0 <= 100; a0 <= b0 >= 40;");
+    return l_bfrac(a0, b0, x0, y0, lambda, eps, w, w1, do_swap, log_p);
+  } else if (lambda > a0 * 0.03) {
+    R_ifDEBUG_printf("  b0 >= a0 > 100; lambda > a0 * 0.03 ");
+    return l_bfrac(a0, b0, x0, y0, lambda, eps, w, w1, do_swap, log_p);
+  }
+
+  /* else if none of the above    L180: */
+  *w = basym(a0, b0, lambda, eps * 100., log_p);
+  *w1 = log_p ? R_Log1_Exp(*w) : 0.5 - *w + 0.5;
+  R_ifDEBUG_printf(
+      "  b0 >= a0 > 100; lambda <= a0 * 0.03: *w:= basym(*) =%.15g\n", *w);
+  return l_end(w, w1, do_swap);
+}
+
 void bratio(double a, double b, double x, double y, double *w, double *w1,
             int *ierr, int log_p) {
   /* -----------------------------------------------------------------------
@@ -466,7 +521,7 @@ void bratio(double a, double b, double x, double y, double *w, double *w1,
 
   bool do_swap;
   int n, ierr1 = 0;
-  double z, a0, b0, x0, y0, lambda;
+  double z, a0, b0, x0, y0;
 
   /*  eps is a machine dependent constant: the smallest
    *      floating point number for which   1. + eps > 1.
@@ -568,25 +623,19 @@ void bratio(double a, double b, double x, double y, double *w, double *w1,
     return;
   }
 
-#define SET_0_noswap                                                           \
-  a0 = a;                                                                      \
-  x0 = x;                                                                      \
-  b0 = b;                                                                      \
-  y0 = y;
-
-#define SET_0_swap                                                             \
-  a0 = b;                                                                      \
-  x0 = y;                                                                      \
-  b0 = a;                                                                      \
-  y0 = x;
-
   if (min(a, b) <= 1.) { /*------------------------ a <= 1  or  b <= 1 ---- */
 
     do_swap = (x > 0.5);
     if (do_swap) {
-      SET_0_swap;
+      a0 = b;
+      x0 = y;
+      b0 = a;
+      y0 = x;
     } else {
-      SET_0_noswap;
+      a0 = a;
+      x0 = x;
+      b0 = b;
+      y0 = y;
     }
     /* now have  x0 <= 1/2 <= y0  (still  x0+y0 == 1) */
 
@@ -677,57 +726,12 @@ void bratio(double a, double b, double x, double y, double *w, double *w1,
     return l_end_from_w1(w, w1, do_swap, log_p);
   } else { /* L30: -------------------- both  a, b > 1  {a0 > 1  &  b0 > 1}
               ---*/
-
-    /* lambda := a y - b x  =  (a + b)y  =  a - (a+b)x    {using x + y == 1},
-     * ------ using the numerically best version : */
-    lambda = isfinite(a + b) ? ((a > b) ? (a + b) * y - b : a - (a + b) * x)
-                             : a * y - b * x;
-    do_swap = (lambda < 0.);
-    if (do_swap) {
-      lambda = -lambda;
-      SET_0_swap;
-    } else {
-      SET_0_noswap;
-    }
-
-    R_ifDEBUG_printf("  L30:  both  a, b > 1; |lambda| = %#g, do_swap = %d\n",
-                     lambda, do_swap);
-
-    if (b0 < 40.) {
-      R_ifDEBUG_printf("  b0 < 40;");
-      if (b0 * x0 <= 0.7 ||
-          (log_p && lambda > 650.)) // << added 2010-03; svn r51327
-        return l_w_bpser(a0, b0, x0, w, w1, eps, do_swap, log_p);
-      else
-        return l140(a0, b0, x0, y0, eps, w, w1, do_swap, ierr, ierr1, log_p);
-    } else if (a0 > b0) { /* ----  a0 > b0 >= 40  ---- */
-      R_ifDEBUG_printf("  a0 > b0 >= 40;");
-      if (b0 <= 100. || lambda > b0 * 0.03)
-        return l_bfrac(a0, b0, x0, y0, lambda, eps, w, w1, do_swap, log_p);
-
-    } else if (a0 <= 100.) {
-      R_ifDEBUG_printf("  a0 <= 100; a0 <= b0 >= 40;");
-      return l_bfrac(a0, b0, x0, y0, lambda, eps, w, w1, do_swap, log_p);
-    } else if (lambda > a0 * 0.03) {
-      R_ifDEBUG_printf("  b0 >= a0 > 100; lambda > a0 * 0.03 ");
-      return l_bfrac(a0, b0, x0, y0, lambda, eps, w, w1, do_swap, log_p);
-    }
-
-    /* else if none of the above    L180: */
-    *w = basym(a0, b0, lambda, eps * 100., log_p);
-    *w1 = log_p ? R_Log1_Exp(*w) : 0.5 - *w + 0.5;
-    R_ifDEBUG_printf(
-        "  b0 >= a0 > 100; lambda <= a0 * 0.03: *w:= basym(*) =%.15g\n", *w);
-    return l_end(w, w1, do_swap);
-
+    return l131_else(a, b, x, y, eps, w, w1, ierr, ierr1, log_p);
   } /* else: a, b > 1 */
 
   /* TERMINATION OF THE PROCEDURE */
 
 } /* bratio */
-
-#undef SET_0_noswap
-#undef SET_0_swap
 
 double fpser(double a, double b, double x, double eps, int log_p) {
   /* ----------------------------------------------------------------------- *
