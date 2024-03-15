@@ -357,6 +357,14 @@ void l_w_bpser(double a0, double b0, double x0, double *w, double *w1,
   return l_end(w, w1, do_swap);
 }
 
+void l_w1_bpser(double a0, double b0, double y0, double *w, double *w1,
+                double eps, bool do_swap, bool log_p) {
+  *w1 = bpser(b0, a0, y0, eps, log_p);
+  *w = log_p ? R_Log1_Exp(*w1) : 0.5 - *w1 + 0.5;
+  R_ifDEBUG_printf(" L_w1_bpser: *w1 := bpser(*) = %.15g\n", *w1);
+  return l_end(w, w1, do_swap);
+}
+
 void bratio(double a, double b, double x, double y, double *w, double *w1,
             int *ierr, int log_p) {
   /* -----------------------------------------------------------------------
@@ -548,7 +556,7 @@ void bratio(double a, double b, double x, double y, double *w, double *w1,
         return l_w_bpser(a0, b0, x0, w, w1, eps, do_swap, log_p);
 
       if (x0 >= 0.29) /* was 0.3, PR#13786 */
-        goto L_w1_bpser;
+        return l_w1_bpser(a0, b0, y0, w, w1, eps, do_swap, log_p);
 
       if (x0 < 0.1 && pow(x0 * b0, a0) <= 0.7)
         return l_w_bpser(a0, b0, x0, w, w1, eps, do_swap, log_p);
@@ -566,7 +574,7 @@ void bratio(double a, double b, double x, double y, double *w, double *w1,
         return l_w_bpser(a0, b0, x0, w, w1, eps, do_swap, log_p);
 
       if (x0 >= 0.3)
-        goto L_w1_bpser;
+        return l_w1_bpser(a0, b0, y0, w, w1, eps, do_swap, log_p);
     }
     n = 20; /* goto L130; */
     *w1 = bup(b0, a0, y0, x0, n, eps, false);
@@ -633,7 +641,7 @@ void bratio(double a, double b, double x, double y, double *w, double *w1,
       R_ifDEBUG_printf("  b0 < 40;");
       if (b0 * x0 <= 0.7 ||
           (log_p && lambda > 650.)) // << added 2010-03; svn r51327
-        goto L_w_bpser;
+        return l_w_bpser(a0, b0, x0, w, w1, eps, do_swap, log_p);
       else
         goto L140;
     } else if (a0 > b0) { /* ----  a0 > b0 >= 40  ---- */
@@ -660,18 +668,6 @@ void bratio(double a, double b, double x, double y, double *w, double *w1,
 
   /*            EVALUATION OF THE APPROPRIATE ALGORITHM */
 
-L_w_bpser: // was L100
-  *w = bpser(a0, b0, x0, eps, log_p);
-  *w1 = log_p ? R_Log1_Exp(*w) : 0.5 - *w + 0.5;
-  R_ifDEBUG_printf(" L_w_bpser: *w := bpser(*) = %.15g\n", *w);
-  return l_end(w, w1, do_swap);
-
-L_w1_bpser: // was L110
-  *w1 = bpser(b0, a0, y0, eps, log_p);
-  *w = log_p ? R_Log1_Exp(*w1) : 0.5 - *w1 + 0.5;
-  R_ifDEBUG_printf(" L_w1_bpser: *w1 := bpser(*) = %.15g\n", *w1);
-  return l_end(w, w1, do_swap);
-
 L_bfrac:
   *w = bfrac(a0, b0, x0, y0, lambda, eps * 15., log_p);
   *w1 = log_p ? R_Log1_Exp(*w) : 0.5 - *w + 0.5;
@@ -694,7 +690,7 @@ L140:
                      *w);
     /*revert: */ b0 += n;
     /* which is only valid if b0 <= 1 || b0*x0 <= 0.7 */
-    goto L_w_bpser;
+    return l_w_bpser(a0, b0, x0, w, w1, eps, do_swap, log_p);
   }
   R_ifDEBUG_printf(" L140: *w := bup(b0=%g,..) = %.15g; ", b0, *w);
   if (x0 <= 0.7) {
