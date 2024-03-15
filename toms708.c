@@ -373,6 +373,55 @@ void l_bfrac(double a0, double b0, double x0, double y0, double lambda,
   return l_end(w, w1, do_swap);
 }
 
+// Evaluation of the appropriate algorithm.
+void l140(double a0, double b0, double x0, double y0, double eps,
+          double *w, double *w1, bool do_swap, int *ierr, int ierr1,
+          bool log_p) {
+  /* b0 := fractional_part( b0 )  in (0, 1]  */
+  int n = (int)b0;
+  b0 -= n;
+  if (b0 == 0.) {
+    --n;
+    b0 = 1.;
+  }
+
+  *w = bup(b0, a0, y0, x0, n, eps, false);
+
+  if (*w < DBL_MIN && log_p) { /* do not believe it; try bpser() : */
+    R_ifDEBUG_printf(" L140: bup(b0=%g,..)=%.15g < DBL_MIN - not used; ", b0,
+                     *w);
+    /*revert: */ b0 += n;
+    /* which is only valid if b0 <= 1 || b0*x0 <= 0.7 */
+    return l_w_bpser(a0, b0, x0, w, w1, eps, do_swap, log_p);
+  }
+  R_ifDEBUG_printf(" L140: *w := bup(b0=%g,..) = %.15g; ", b0, *w);
+  if (x0 <= 0.7) {
+    /* log_p :  TODO:  w = bup(.) + bpser(.)  -- not so easy to use log-scale */
+    *w += bpser(a0, b0, x0, eps, /* log_p = */ false);
+    R_ifDEBUG_printf(" x0 <= 0.7: *w := *w + bpser(*) = %.15g\n", *w);
+    return l_end_from_w(w, w1, do_swap, log_p);
+  }
+  /* L150: */
+  if (a0 <= 15.) {
+    n = 20;
+    *w += bup(a0, b0, x0, y0, n, eps, false);
+    R_ifDEBUG_printf("\n a0 <= 15: *w := *w + bup(*) = %.15g;", *w);
+    a0 += n;
+  }
+  R_ifDEBUG_printf(" bgrat(*, w=%.15g) ", *w);
+  bgrat(a0, b0, x0, y0, w, 15 * eps, &ierr1, false);
+  if (ierr1)
+    *ierr = 10 + ierr1;
+#ifdef DEBUG_bratio
+  REprintf("==> new w=%.15g", *w);
+  if (ierr1)
+    REprintf(" Error(code=%d)\n", ierr1);
+  else
+    REprintf("\n");
+#endif
+  return l_end_from_w(w, w1, do_swap, log_p);
+}
+
 void bratio(double a, double b, double x, double y, double *w, double *w1,
             int *ierr, int log_p) {
   /* -----------------------------------------------------------------------
@@ -651,7 +700,7 @@ void bratio(double a, double b, double x, double y, double *w, double *w1,
           (log_p && lambda > 650.)) // << added 2010-03; svn r51327
         return l_w_bpser(a0, b0, x0, w, w1, eps, do_swap, log_p);
       else
-        goto L140;
+        return l140(a0, b0, x0, y0, eps, w, w1, do_swap, ierr, ierr1, log_p);
     } else if (a0 > b0) { /* ----  a0 > b0 >= 40  ---- */
       R_ifDEBUG_printf("  a0 > b0 >= 40;");
       if (b0 <= 100. || lambda > b0 * 0.03)
@@ -673,53 +722,6 @@ void bratio(double a, double b, double x, double y, double *w, double *w1,
     return l_end(w, w1, do_swap);
 
   } /* else: a, b > 1 */
-
-  /*            EVALUATION OF THE APPROPRIATE ALGORITHM */
-
-L140:
-  /* b0 := fractional_part( b0 )  in (0, 1]  */
-  n = (int)b0;
-  b0 -= n;
-  if (b0 == 0.) {
-    --n;
-    b0 = 1.;
-  }
-
-  *w = bup(b0, a0, y0, x0, n, eps, false);
-
-  if (*w < DBL_MIN && log_p) { /* do not believe it; try bpser() : */
-    R_ifDEBUG_printf(" L140: bup(b0=%g,..)=%.15g < DBL_MIN - not used; ", b0,
-                     *w);
-    /*revert: */ b0 += n;
-    /* which is only valid if b0 <= 1 || b0*x0 <= 0.7 */
-    return l_w_bpser(a0, b0, x0, w, w1, eps, do_swap, log_p);
-  }
-  R_ifDEBUG_printf(" L140: *w := bup(b0=%g,..) = %.15g; ", b0, *w);
-  if (x0 <= 0.7) {
-    /* log_p :  TODO:  w = bup(.) + bpser(.)  -- not so easy to use log-scale */
-    *w += bpser(a0, b0, x0, eps, /* log_p = */ false);
-    R_ifDEBUG_printf(" x0 <= 0.7: *w := *w + bpser(*) = %.15g\n", *w);
-    return l_end_from_w(w, w1, do_swap, log_p);
-  }
-  /* L150: */
-  if (a0 <= 15.) {
-    n = 20;
-    *w += bup(a0, b0, x0, y0, n, eps, false);
-    R_ifDEBUG_printf("\n a0 <= 15: *w := *w + bup(*) = %.15g;", *w);
-    a0 += n;
-  }
-  R_ifDEBUG_printf(" bgrat(*, w=%.15g) ", *w);
-  bgrat(a0, b0, x0, y0, w, 15 * eps, &ierr1, false);
-  if (ierr1)
-    *ierr = 10 + ierr1;
-#ifdef DEBUG_bratio
-  REprintf("==> new w=%.15g", *w);
-  if (ierr1)
-    REprintf(" Error(code=%d)\n", ierr1);
-  else
-    REprintf("\n");
-#endif
-  return l_end_from_w(w, w1, do_swap, log_p);
 
   /* TERMINATION OF THE PROCEDURE */
 
