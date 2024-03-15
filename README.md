@@ -6,7 +6,7 @@ The file `toms708.c` contains a stand-alone C implementation of the TOMS708 algo
 `toms708` was originally a Fortran77 program by Armido Didonato and Alfred Morris, Jr.
 It was later updated by John Burkardt and converted to a C file for the R project.
 
-This repository contains an updated version of R's C file which aim to be more readable:
+This repository contains an updated version of R's C file which aims to be more readable:
 
 - Replace most unstructured control flow, such as GOTOs and macros, with structured control flow (functions) or just replace them by the code they would have executed.
 - Reformatting the code via `clang-format`.
