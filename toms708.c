@@ -365,6 +365,14 @@ void l_w1_bpser(double a0, double b0, double y0, double *w, double *w1,
   return l_end(w, w1, do_swap);
 }
 
+void l_bfrac(double a0, double b0, double x0, double y0, double lambda,
+             double eps, double *w, double *w1, bool do_swap, bool log_p) {
+  *w = bfrac(a0, b0, x0, y0, lambda, eps * 15., log_p);
+  *w1 = log_p ? R_Log1_Exp(*w) : 0.5 - *w + 0.5;
+  R_ifDEBUG_printf(" L_bfrac: *w := bfrac(*) = %g\n", *w);
+  return l_end(w, w1, do_swap);
+}
+
 void bratio(double a, double b, double x, double y, double *w, double *w1,
             int *ierr, int log_p) {
   /* -----------------------------------------------------------------------
@@ -647,14 +655,14 @@ void bratio(double a, double b, double x, double y, double *w, double *w1,
     } else if (a0 > b0) { /* ----  a0 > b0 >= 40  ---- */
       R_ifDEBUG_printf("  a0 > b0 >= 40;");
       if (b0 <= 100. || lambda > b0 * 0.03)
-        goto L_bfrac;
+        return l_bfrac(a0, b0, x0, y0, lambda, eps, w, w1, do_swap, log_p);
 
     } else if (a0 <= 100.) {
       R_ifDEBUG_printf("  a0 <= 100; a0 <= b0 >= 40;");
-      goto L_bfrac;
+      return l_bfrac(a0, b0, x0, y0, lambda, eps, w, w1, do_swap, log_p);
     } else if (lambda > a0 * 0.03) {
       R_ifDEBUG_printf("  b0 >= a0 > 100; lambda > a0 * 0.03 ");
-      goto L_bfrac;
+      return l_bfrac(a0, b0, x0, y0, lambda, eps, w, w1, do_swap, log_p);
     }
 
     /* else if none of the above    L180: */
@@ -667,12 +675,6 @@ void bratio(double a, double b, double x, double y, double *w, double *w1,
   } /* else: a, b > 1 */
 
   /*            EVALUATION OF THE APPROPRIATE ALGORITHM */
-
-L_bfrac:
-  *w = bfrac(a0, b0, x0, y0, lambda, eps * 15., log_p);
-  *w1 = log_p ? R_Log1_Exp(*w) : 0.5 - *w + 0.5;
-  R_ifDEBUG_printf(" L_bfrac: *w := bfrac(*) = %g\n", *w);
-  return l_end(w, w1, do_swap);
 
 L140:
   /* b0 := fractional_part( b0 )  in (0, 1]  */
