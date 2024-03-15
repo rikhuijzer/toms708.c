@@ -713,7 +713,11 @@ void bratio(double a, double b, double x, double y, double *w, double *w1,
 
       if (b0 > 15.) {
         *w1 = 0.;
-        goto L131;
+        // At this point (min(a, b) <= 1.) still holds since we're inside
+        // the (max(a, b) <= 1.) case and a and b were not modified.
+        // Therefore, we know that we can go straight to l131_if.
+        return l131_if(a, b, x, a0, b0, x0, y0, w, w1, n, eps, ierr, ierr1,
+                       did_bup, do_swap, log_p);
       }
     } else { /*  a, b <= 1 */
       R_ifDEBUG_printf("\n      both a,b <= 1; ");
@@ -731,7 +735,9 @@ void bratio(double a, double b, double x, double y, double *w, double *w1,
     did_bup = true;
     R_ifDEBUG_printf("  ... n=20 and *w1 := bup(*) = %.15g; ", *w1);
     b0 += n;
-  L131:
+
+    // This note belongs to the refactoring to remove L131:
+    // Note that this call belongs to the (min(a, b) <= 1.) case.
     return l131_if(a, b, x, a0, b0, x0, y0, w, w1, n, eps, ierr, ierr1, did_bup,
                    do_swap, log_p);
   } else { /* L30: -------------------- both  a, b > 1  {a0 > 1  &  b0 > 1}
