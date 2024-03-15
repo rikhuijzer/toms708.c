@@ -29,6 +29,9 @@ When having set up `clangd` with inline code hints, it will automatically verify
 - The variable names passed into the function are the same as the variable names in the function signature.
     This ensures that the code is executed with the same variables as before.
 
+It will not verify whether the code would enter the labeled block without a `goto`.
+This is something that needs to be done manually.
+
 ## Testing
 
 To test the code, install a recent Rust version and run:
