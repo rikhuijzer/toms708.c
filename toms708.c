@@ -374,9 +374,8 @@ void l_bfrac(double a0, double b0, double x0, double y0, double lambda,
 }
 
 // Evaluation of the appropriate algorithm.
-void l140(double a0, double b0, double x0, double y0, double eps,
-          double *w, double *w1, bool do_swap, int *ierr, int ierr1,
-          bool log_p) {
+void l140(double a0, double b0, double x0, double y0, double eps, double *w,
+          double *w1, bool do_swap, int *ierr, int ierr1, bool log_p) {
   /* b0 := fractional_part( b0 )  in (0, 1]  */
   int n = (int)b0;
   b0 -= n;
