@@ -185,6 +185,26 @@ void l_end(double *w, double *w1, bool do_swap) {
   return;
 }
 
+void l_end_from_w(double *w, double *w1, bool do_swap, bool log_p) {
+    if (log_p) {
+        *w1 = log1p(-*w);
+        *w = log(*w);
+    } else {
+        *w1 = 0.5 - *w + 0.5;
+    }
+    return l_end(w, w1, do_swap);
+}
+
+void l_end_from_w1(double *w, double *w1, bool do_swap, bool log_p) {
+    if (log_p) {
+        *w = log1p(-*w1);
+        *w1 = log(*w1);
+    } else {
+        *w = 0.5 - *w1 + 0.5;
+    }
+    return l_end(w, w1, do_swap);
+}
+
 void bratio(double a, double b, double x, double y, double *w, double *w1,
             int *ierr, int log_p) {
   /* -----------------------------------------------------------------------
@@ -366,7 +386,7 @@ void bratio(double a, double b, double x, double y, double *w, double *w1,
     if (a0 < min(eps, eps * b0) && b0 * x0 <= 1.) { /* L90: */
       *w1 = apser(a0, b0, x0, eps);
       R_ifDEBUG_printf("  a0 small -> w1 := apser(*) = %.15g\n", *w1);
-      goto L_end_from_w1;
+      return l_end_from_w1(w, w1, do_swap, log_p);
     }
 
     bool did_bup = false;
@@ -438,7 +458,7 @@ void bratio(double a, double b, double x, double y, double *w, double *w1,
       *ierr = 10 + ierr1;
     if (*w1 < 0)
       printf("bratio(a=%g, b=%g, x=%g): bgrat() -> w1 = %g", a, b, x, *w1);
-    goto L_end_from_w1;
+    return l_end_from_w1(w, w1, do_swap, log_p);
   } else { /* L30: -------------------- both  a, b > 1  {a0 > 1  &  b0 > 1}
               ---*/
 
@@ -529,7 +549,7 @@ L140:
     /* log_p :  TODO:  w = bup(.) + bpser(.)  -- not so easy to use log-scale */
     *w += bpser(a0, b0, x0, eps, /* log_p = */ false);
     R_ifDEBUG_printf(" x0 <= 0.7: *w := *w + bpser(*) = %.15g\n", *w);
-    goto L_end_from_w;
+    return l_end_from_w(w, w1, do_swap, log_p);
   }
   /* L150: */
   if (a0 <= 15.) {
@@ -549,27 +569,9 @@ L140:
   else
     REprintf("\n");
 #endif
-  goto L_end_from_w;
+  return l_end_from_w(w, w1, do_swap, log_p);
 
   /* TERMINATION OF THE PROCEDURE */
-
-L_end_from_w:
-  if (log_p) {
-    *w1 = log1p(-*w);
-    *w = log(*w);
-  } else {
-    *w1 = 0.5 - *w + 0.5;
-  }
-  return l_end(w, w1, do_swap);
-
-L_end_from_w1:
-  if (log_p) {
-    *w = log1p(-*w1);
-    *w1 = log(*w1);
-  } else {
-    *w = 0.5 - *w1 + 0.5;
-  }
-  return l_end(w, w1, do_swap);
 
 L_end_from_w1_log:
   // *w1 = log(w1) already; w = 1 - w1  ==> log(w) = log(1 - w1) = log(1 -
