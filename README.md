@@ -10,6 +10,7 @@ This repository contains an updated version of R's C file which aim to be more r
 
 - Replace most unstructured control flow, such as GOTOs and macros, with structured control flow (functions) or just replace them by the code they would have executed.
 - Reformatting the code via `clang-format`.
+- Move functions around so that function calls are always after function definition.
 
 Unlike many other files in the R `nmath` directory, the `toms708.c` file does not mention the GNU General Public License in its header.
 Therefore I changed the license for this C file to one of the most permissive licenses: MIT.

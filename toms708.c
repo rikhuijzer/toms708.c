@@ -74,7 +74,6 @@ static void bgrat(double, double, double, double, double *, double, int *,
                   bool log_w);
 static double grat_r(double a, double x, double r, double eps);
 static double apser(double, double, double, double);
-static double bpser(double, double, double, double, int log_p);
 static double basym(double, double, double, double, int log_p);
 static double fpser(double, double, double, double, int log_p);
 static double bup(double, double, double, double, int, double, int give_log);
@@ -214,6 +213,147 @@ void l_end_from_w1_log(double *w, double *w1, bool do_swap, bool log_p) {
     *w = /* 1 - exp(*w1) */ -expm1(*w1);
     *w1 = exp(*w1);
   }
+  return l_end(w, w1, do_swap);
+}
+
+static double bpser(double a, double b, double x, double eps, int log_p) {
+  /* -----------------------------------------------------------------------
+   * Power SERies expansion for evaluating I_x(a,b) when
+   *	       b <= 1 or b*x <= 0.7.   eps is the tolerance used.
+   * NB: if log_p is true, also use it if   (b < 40  & lambda > 650)
+   * ----------------------------------------------------------------------- */
+
+  int i, m;
+  double ans, c, t, u, z, a0, b0, apb;
+
+  if (x == 0.) {
+    return r_d__0(log_p);
+  }
+  /* ----------------------------------------------------------------------- */
+  /*	      compute the factor  x^a/(a*Beta(a,b)) */
+  /* ----------------------------------------------------------------------- */
+  a0 = min(a, b);
+  if (a0 >= 1.) { /*		 ------	 1 <= a0 <= b0  ------ */
+    z = a * log(x) - betaln(a, b);
+    ans = log_p ? z - log(a) : exp(z) / a;
+  } else {
+    b0 = max(a, b);
+
+    if (b0 < 8.) {
+
+      if (b0 <= 1.) { /*	 ------	 a0 < 1	 and  b0 <= 1  ------ */
+
+        if (log_p) {
+          ans = a * log(x);
+        } else {
+          ans = pow(x, a);
+          if (ans == 0.) /* once underflow, always underflow .. */
+            return ans;
+        }
+        apb = a + b;
+        if (apb > 1.) {
+          u = a + b - 1.;
+          z = (gam1(u) + 1.) / apb;
+        } else {
+          z = gam1(apb) + 1.;
+        }
+        c = (gam1(a) + 1.) * (gam1(b) + 1.) / z;
+
+        if (log_p) /* FIXME ? -- improve quite a bit for c ~= 1 */
+          ans += log(c * (b / apb));
+        else
+          ans *= c * (b / apb);
+
+      } else { /* 	------	a0 < 1 < b0 < 8	 ------ */
+
+        u = gamln1(a0);
+        m = (int)(b0 - 1.);
+        if (m >= 1) {
+          c = 1.;
+          for (i = 1; i <= m; ++i) {
+            b0 += -1.;
+            c *= b0 / (a0 + b0);
+          }
+          u += log(c);
+        }
+
+        z = a * log(x) - u;
+        b0 += -1.; // => b0 in (0, 7)
+        apb = a0 + b0;
+        if (apb > 1.) {
+          u = a0 + b0 - 1.;
+          t = (gam1(u) + 1.) / apb;
+        } else {
+          t = gam1(apb) + 1.;
+        }
+
+        if (log_p) /* FIXME? potential for improving log(t) */
+          ans = z + log(a0 / a) + log1p(gam1(b0)) - log(t);
+        else
+          ans = exp(z) * (a0 / a) * (gam1(b0) + 1.) / t;
+      }
+
+    } else { /* 		------  a0 < 1 < 8 <= b0  ------ */
+
+      u = gamln1(a0) + algdiv(a0, b0);
+      z = a * log(x) - u;
+
+      if (log_p)
+        ans = z + log(a0 / a);
+      else
+        ans = a0 / a * exp(z);
+    }
+  }
+  R_ifDEBUG_printf(" bpser(a=%g, b=%g, x=%g, log=%d): prelim.ans = %.14g;\n", a,
+                   b, x, log_p, ans);
+  if (ans == r_d__0(log_p) || (!log_p && a <= eps * 0.1)) {
+    return ans;
+  }
+
+  /* ----------------------------------------------------------------------- */
+  /*		       COMPUTE THE SERIES */
+  /* ----------------------------------------------------------------------- */
+  double tol = eps / a, n = 0., sum = 0., w;
+  c = 1.;
+  do { // sum is alternating as long as n < b (<==> 1 - b/n < 0)
+    n += 1.;
+    c *= (0.5 - b / n + 0.5) * x;
+    w = c / (a + n);
+    sum += w;
+  } while (n < 1e7 && fabs(w) > tol);
+  if (fabs(w) > tol) { // the series did not converge (in time)
+    // warn only when the result seems to matter:
+    if ((log_p && !(a * sum > -1. && fabs(log1p(a * sum)) < eps * fabs(ans))) ||
+        (!log_p && fabs(a * sum + 1.) != 1.))
+      printf(" bpser(a=%g, b=%g, x=%g,...) did not converge (n=1e7, |w|/tol=%g "
+             "> 1; A=%g)",
+             a, b, x, fabs(w) / tol, ans);
+  }
+  R_ifDEBUG_printf(
+      "  -> n=%.0f iterations, |w|=%g %s %g=tol:=eps/a ==> a*sum=%g\n", n,
+      fabs(w), (fabs(w) > tol) ? ">!!>" : "<=", tol, a * sum);
+  if (log_p) {
+    if (a * sum > -1.)
+      ans += log1p(a * sum);
+    else {
+      if (ans > ML_NEGINF)
+        printf("pbeta(*, log.p=true) -> bpser(a=%g, b=%g, x=%g,...) underflow "
+               "to -Inf",
+               a, b, x);
+      ans = ML_NEGINF;
+    }
+  } else if (a * sum > -1.)
+    ans *= (a * sum + 1.);
+  else // underflow to
+    ans = 0.;
+  return ans;
+} /* bpser */
+
+void l_w_bpser(double a0, double b0, double x0, double *w, double *w1,
+               double eps, bool do_swap, bool log_p) {
+  *w = bpser(a0, b0, x0, eps, log_p);
+  *w1 = log_p ? R_Log1_Exp(*w) : 0.5 - *w + 0.5;
+  R_ifDEBUG_printf(" L_w_bpser: *w := bpser(*) = %.15g\n", *w);
   return l_end(w, w1, do_swap);
 }
 
@@ -405,13 +545,13 @@ void bratio(double a, double b, double x, double y, double *w, double *w1,
     if (max(a0, b0) > 1.) { /* L20:  min(a,b) <= 1 < max(a,b)  */
       R_ifDEBUG_printf("\n L20:  min(a,b) <= 1 < max(a,b); ");
       if (b0 <= 1.)
-        goto L_w_bpser;
+        return l_w_bpser(a0, b0, x0, w, w1, eps, do_swap, log_p);
 
       if (x0 >= 0.29) /* was 0.3, PR#13786 */
         goto L_w1_bpser;
 
       if (x0 < 0.1 && pow(x0 * b0, a0) <= 0.7)
-        goto L_w_bpser;
+        return l_w_bpser(a0, b0, x0, w, w1, eps, do_swap, log_p);
 
       if (b0 > 15.) {
         *w1 = 0.;
@@ -420,10 +560,10 @@ void bratio(double a, double b, double x, double y, double *w, double *w1,
     } else { /*  a, b <= 1 */
       R_ifDEBUG_printf("\n      both a,b <= 1; ");
       if (a0 >= min(0.2, b0))
-        goto L_w_bpser;
+        return l_w_bpser(a0, b0, x0, w, w1, eps, do_swap, log_p);
 
       if (pow(x0, a0) <= 0.9)
-        goto L_w_bpser;
+        return l_w_bpser(a0, b0, x0, w, w1, eps, do_swap, log_p);
 
       if (x0 >= 0.3)
         goto L_w1_bpser;
@@ -669,139 +809,6 @@ static double apser(double a, double b, double x, double eps) {
 
   return -a * (c + s);
 } /* apser */
-
-static double bpser(double a, double b, double x, double eps, int log_p) {
-  /* -----------------------------------------------------------------------
-   * Power SERies expansion for evaluating I_x(a,b) when
-   *	       b <= 1 or b*x <= 0.7.   eps is the tolerance used.
-   * NB: if log_p is true, also use it if   (b < 40  & lambda > 650)
-   * ----------------------------------------------------------------------- */
-
-  int i, m;
-  double ans, c, t, u, z, a0, b0, apb;
-
-  if (x == 0.) {
-    return r_d__0(log_p);
-  }
-  /* ----------------------------------------------------------------------- */
-  /*	      compute the factor  x^a/(a*Beta(a,b)) */
-  /* ----------------------------------------------------------------------- */
-  a0 = min(a, b);
-  if (a0 >= 1.) { /*		 ------	 1 <= a0 <= b0  ------ */
-    z = a * log(x) - betaln(a, b);
-    ans = log_p ? z - log(a) : exp(z) / a;
-  } else {
-    b0 = max(a, b);
-
-    if (b0 < 8.) {
-
-      if (b0 <= 1.) { /*	 ------	 a0 < 1	 and  b0 <= 1  ------ */
-
-        if (log_p) {
-          ans = a * log(x);
-        } else {
-          ans = pow(x, a);
-          if (ans == 0.) /* once underflow, always underflow .. */
-            return ans;
-        }
-        apb = a + b;
-        if (apb > 1.) {
-          u = a + b - 1.;
-          z = (gam1(u) + 1.) / apb;
-        } else {
-          z = gam1(apb) + 1.;
-        }
-        c = (gam1(a) + 1.) * (gam1(b) + 1.) / z;
-
-        if (log_p) /* FIXME ? -- improve quite a bit for c ~= 1 */
-          ans += log(c * (b / apb));
-        else
-          ans *= c * (b / apb);
-
-      } else { /* 	------	a0 < 1 < b0 < 8	 ------ */
-
-        u = gamln1(a0);
-        m = (int)(b0 - 1.);
-        if (m >= 1) {
-          c = 1.;
-          for (i = 1; i <= m; ++i) {
-            b0 += -1.;
-            c *= b0 / (a0 + b0);
-          }
-          u += log(c);
-        }
-
-        z = a * log(x) - u;
-        b0 += -1.; // => b0 in (0, 7)
-        apb = a0 + b0;
-        if (apb > 1.) {
-          u = a0 + b0 - 1.;
-          t = (gam1(u) + 1.) / apb;
-        } else {
-          t = gam1(apb) + 1.;
-        }
-
-        if (log_p) /* FIXME? potential for improving log(t) */
-          ans = z + log(a0 / a) + log1p(gam1(b0)) - log(t);
-        else
-          ans = exp(z) * (a0 / a) * (gam1(b0) + 1.) / t;
-      }
-
-    } else { /* 		------  a0 < 1 < 8 <= b0  ------ */
-
-      u = gamln1(a0) + algdiv(a0, b0);
-      z = a * log(x) - u;
-
-      if (log_p)
-        ans = z + log(a0 / a);
-      else
-        ans = a0 / a * exp(z);
-    }
-  }
-  R_ifDEBUG_printf(" bpser(a=%g, b=%g, x=%g, log=%d): prelim.ans = %.14g;\n", a,
-                   b, x, log_p, ans);
-  if (ans == r_d__0(log_p) || (!log_p && a <= eps * 0.1)) {
-    return ans;
-  }
-
-  /* ----------------------------------------------------------------------- */
-  /*		       COMPUTE THE SERIES */
-  /* ----------------------------------------------------------------------- */
-  double tol = eps / a, n = 0., sum = 0., w;
-  c = 1.;
-  do { // sum is alternating as long as n < b (<==> 1 - b/n < 0)
-    n += 1.;
-    c *= (0.5 - b / n + 0.5) * x;
-    w = c / (a + n);
-    sum += w;
-  } while (n < 1e7 && fabs(w) > tol);
-  if (fabs(w) > tol) { // the series did not converge (in time)
-    // warn only when the result seems to matter:
-    if ((log_p && !(a * sum > -1. && fabs(log1p(a * sum)) < eps * fabs(ans))) ||
-        (!log_p && fabs(a * sum + 1.) != 1.))
-      printf(" bpser(a=%g, b=%g, x=%g,...) did not converge (n=1e7, |w|/tol=%g "
-             "> 1; A=%g)",
-             a, b, x, fabs(w) / tol, ans);
-  }
-  R_ifDEBUG_printf(
-      "  -> n=%.0f iterations, |w|=%g %s %g=tol:=eps/a ==> a*sum=%g\n", n,
-      fabs(w), (fabs(w) > tol) ? ">!!>" : "<=", tol, a * sum);
-  if (log_p) {
-    if (a * sum > -1.)
-      ans += log1p(a * sum);
-    else {
-      if (ans > ML_NEGINF)
-        printf("pbeta(*, log.p=true) -> bpser(a=%g, b=%g, x=%g,...) underflow "
-               "to -Inf",
-               a, b, x);
-      ans = ML_NEGINF;
-    }
-  } else if (a * sum > -1.)
-    ans *= (a * sum + 1.);
-  else // underflow to
-    ans = 0.;
-  return ans;
-} /* bpser */
 
 static double bup(double a, double b, double x, double y, int n, double eps,
                   int give_log) {
