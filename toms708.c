@@ -205,6 +205,18 @@ void l_end_from_w1(double *w, double *w1, bool do_swap, bool log_p) {
   return l_end(w, w1, do_swap);
 }
 
+void l_end_from_w1_log(double *w, double *w1, bool do_swap, bool log_p) {
+  // *w1 = log(w1) already; w = 1 - w1  ==> log(w) = log(1 - w1) = log(1 -
+  // exp(*w1))
+  if (log_p) {
+    *w = R_Log1_Exp(*w1);
+  } else {
+    *w = /* 1 - exp(*w1) */ -expm1(*w1);
+    *w1 = exp(*w1);
+  }
+  return l_end(w, w1, do_swap);
+}
+
 void bratio(double a, double b, double x, double y, double *w, double *w1,
             int *ierr, int log_p) {
   /* -----------------------------------------------------------------------
@@ -451,7 +463,7 @@ void bratio(double a, double b, double x, double y, double *w, double *w1,
       else
         REprintf("\n");
 #endif
-      goto L_end_from_w1_log;
+      return l_end_from_w1_log(w, w1, do_swap, log_p);
     }
     // else
     if (ierr1)
@@ -572,17 +584,6 @@ L140:
   return l_end_from_w(w, w1, do_swap, log_p);
 
   /* TERMINATION OF THE PROCEDURE */
-
-L_end_from_w1_log:
-  // *w1 = log(w1) already; w = 1 - w1  ==> log(w) = log(1 - w1) = log(1 -
-  // exp(*w1))
-  if (log_p) {
-    *w = R_Log1_Exp(*w1);
-  } else {
-    *w = /* 1 - exp(*w1) */ -expm1(*w1);
-    *w1 = exp(*w1);
-  }
-  return l_end(w, w1, do_swap);
 
 } /* bratio */
 
