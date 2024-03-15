@@ -186,23 +186,23 @@ void l_end(double *w, double *w1, bool do_swap) {
 }
 
 void l_end_from_w(double *w, double *w1, bool do_swap, bool log_p) {
-    if (log_p) {
-        *w1 = log1p(-*w);
-        *w = log(*w);
-    } else {
-        *w1 = 0.5 - *w + 0.5;
-    }
-    return l_end(w, w1, do_swap);
+  if (log_p) {
+    *w1 = log1p(-*w);
+    *w = log(*w);
+  } else {
+    *w1 = 0.5 - *w + 0.5;
+  }
+  return l_end(w, w1, do_swap);
 }
 
 void l_end_from_w1(double *w, double *w1, bool do_swap, bool log_p) {
-    if (log_p) {
-        *w = log1p(-*w1);
-        *w1 = log(*w1);
-    } else {
-        *w = 0.5 - *w1 + 0.5;
-    }
-    return l_end(w, w1, do_swap);
+  if (log_p) {
+    *w = log1p(-*w1);
+    *w1 = log(*w1);
+  } else {
+    *w = 0.5 - *w1 + 0.5;
+  }
+  return l_end(w, w1, do_swap);
 }
 
 void bratio(double a, double b, double x, double y, double *w, double *w1,
